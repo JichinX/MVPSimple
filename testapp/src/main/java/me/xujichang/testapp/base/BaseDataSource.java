@@ -5,5 +5,5 @@ package me.xujichang.testapp.base;
  */
 
 public interface BaseDataSource {
-
+    
 }

@@ -1,5 +1,6 @@
 package me.xujichang.testapp.login;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -7,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import me.xujichang.testapp.main.MainActivity;
 import me.xujichang.testapp.R;
 import me.xujichang.testapp.base.BaseActivity;
 
@@ -50,6 +52,8 @@ public class LoginActivity extends BaseActivity implements LoginContract.View {
     @Override
     public void loginSuccess() {
         toastShow("登陆成功");
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     @Override
