@@ -1,7 +1,11 @@
 package me.xujichang.testapp.main;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import me.xujichang.testapp.base.BasePresenter;
 import me.xujichang.testapp.base.BaseView;
+import me.xujichang.testapp.bean.ZhiHuNewsBean;
 
 /**
  * 主页所使用的中间人
@@ -11,13 +15,18 @@ import me.xujichang.testapp.base.BaseView;
 public class MainContract {
 
     interface ZhiHuView extends BaseView<ZhiHuPresenter> {
+        void onInitSuccess(ZhiHuNewsBean object);
 
+        void onInitFail();
+
+        void onLoadSuccess();
+
+        void onLoadNothing();
     }
 
     interface ZhiHuPresenter extends BasePresenter {
 
         void loadZhiHuInformation();
-
 
     }
 

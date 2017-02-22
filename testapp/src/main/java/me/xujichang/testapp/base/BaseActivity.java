@@ -3,11 +3,11 @@ package me.xujichang.testapp.base;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 import me.xujichang.testapp.util.ToastUtils;
 
 /**
+ * Activity基类，
  * Created by Administrator on 2017/2/17.
  */
 

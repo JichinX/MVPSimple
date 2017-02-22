@@ -1,5 +1,9 @@
 package me.xujichang.testapp.main;
 
+import com.google.gson.JsonObject;
+
+import me.xujichang.testapp.bean.ZhiHuNewsBean;
+
 /**
  * Created by Administrator on 2017/2/17.
  */
@@ -34,14 +38,15 @@ public class ZhiHuPresenterImpl implements MainContract.ZhiHuPresenter {
     @Override
     public void start() {
         dataSource.initZhiHuData(new ZhiHuDataSource.InitCallBack() {
-            @Override
-            public void onInitZhiHuData() {
 
+            @Override
+            public void onInitZhiHuData(ZhiHuNewsBean o) {
+                view.onInitSuccess(o);
             }
 
             @Override
             public void onDataNotAvailable() {
-
+                view.onInitFail();
             }
         });
     }
