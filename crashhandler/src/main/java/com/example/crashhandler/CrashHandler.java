@@ -20,6 +20,10 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     private Thread.UncaughtExceptionHandler defaultHandler;
     private JSONObject errInfo;
     private Class restartActivity;
+    private String url;
+
+
+    private LogManager logManager;
 
     private CrashHandler() {
         errInfo = new JSONObject();
@@ -32,17 +36,26 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         return handler;
     }
 
-    public void init(Context context, Class restartActivity) {
+    /**
+     * 初始化 基本信息
+     *
+     * @param context         上下文
+     * @param url             服务器地址
+     * @param restartActivity 重启到目的Activity
+     */
+    public void init(Context context, String url, Class restartActivity) {
+        Log.i(TAG, "init App");
         this.context = context;
         this.restartActivity = restartActivity;
+        this.url = url;
+        logManager = LogManager.newInstance(context);
+        logManager.checkLog();
         defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-//        defaultHandler.uncaughtException(t, e);
-
         if (!handleException(e) && null != defaultHandler) {
             defaultHandler.uncaughtException(t, e);
         } else {
@@ -50,24 +63,27 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         }
     }
 
+    /**
+     * 做四件事 关于日志的上传时机 可灵活处置
+     * 1，获取设备信息
+     * 2，获取错误信息
+     *
+     * @param e
+     * @return
+     */
     private boolean handleException(Throwable e) {
         if (null == e) {
             return false;
         }
-        //做四件事 关于日志的上传时机 可灵活处置
-        // 1，获取收集信息
-        // 2，获取错误信息
-        // 3，上传服务器
-        // 4，重启APP
+
         try {
-            getExceptionInfo(e);
             getDeviceInfo();
-            SendInfoToServer();
+            getExceptionInfo(e);
+            logManager.saveExceptionLog(errInfo.toString());
         } catch (JSONException ex) {
             ex.printStackTrace();
-        } finally {
+            return false;
         }
-
         return true;
     }
 
@@ -83,39 +99,39 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * 上传日志信息至服务器
-     */
-    private void SendInfoToServer() {
-        Log.i(TAG, "上传日志信息至服务器:\n" + errInfo.toString());
-
-    }
-
-    /**
      * 获取错误信息
+     *
+     * @throws JSONException json 错误
      */
     private void getExceptionInfo(Throwable e) throws JSONException {
         Log.i(TAG, "获取错误信息------------------------");
-        StringBuilder builder = new StringBuilder(e.toString() + "\n");
-        for (StackTraceElement traceElement : e.getStackTrace())
+        StringBuilder builder = new StringBuilder("errInfo:");
+        for (StackTraceElement traceElement : e.getStackTrace()) {
             builder.append("\tat ").append(traceElement).append("\n");
-        errInfo.put("ExceptionInfo", builder.toString());
+        }
+        String str = errInfo.optString("content");
+        builder.append(str, 0, str.length());
+        errInfo.put("content", builder.toString());
     }
 
     /**
      * 获取设备信息
-     * <p>
-     * IEM
-     * cpu
-     * Android 版本号
-     * 系统类型
-     * 手机厂商
-     * 手机型号
+     *
+     * @throws JSONException Json错误
      */
     private void getDeviceInfo() throws JSONException {
         Log.i(TAG, "获取设备信息----------------------");
-        errInfo.put("deviceInfo", DeviceUtils.newInstence().getCpuInfo());
-//        TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        String deviceInfo = DeviceUtils.newInstence().getDeviceInfo(context, errInfo);
+        StringBuilder builder = new StringBuilder(deviceInfo);
+        errInfo.put("content", builder.append("\n").toString());
+    }
 
-
+    /**
+     * 获取服务器地址
+     *
+     * @return 服务器地址
+     */
+    String getUrl() {
+        return url;
     }
 }

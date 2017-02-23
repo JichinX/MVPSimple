@@ -60,6 +60,7 @@ public class ZhiHuFragment extends Fragment implements MainContract.ZhiHuView {
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                list.add("sdadsd");
 //                presenter.loadZhiHuInformation();
 
             }

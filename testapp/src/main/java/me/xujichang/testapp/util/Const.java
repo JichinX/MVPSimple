@@ -9,6 +9,8 @@ public class Const {
     public static class DefaultData {
         public static final String DEFAULT_NAME = "18758249744";
         public static final String DEFAULT_PWD = "12345678";
+
+        public static final String BASE_URL = "http://10.10.100.6:9987/restful/crashlog/";
     }
 
     public static class Environment {
@@ -26,6 +28,7 @@ public class Const {
          * 正常开发环境 不需要获取崩溃日志，便于调试
          */
         public static final int ENVIRONMENT_DEVELOPER = 1;
+
 
     }
 }
