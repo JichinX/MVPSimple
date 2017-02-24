@@ -30,6 +30,7 @@ public class APPApplication extends Application {
         //初始化崩溃日志收集器
         CrashHandler handler = CrashHandler.newInstance();
         handler.init(getApplicationContext(), Const.DefaultData.BASE_URL, LoginActivity.class);
+        handler.setIsDeBug(true);
         new Thread() {
             @Override
             public void run() {

@@ -2,7 +2,6 @@ package com.example.crashhandler;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +13,6 @@ import org.json.JSONObject;
  */
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
-    private static final String TAG = "CrashHandler";
     private static CrashHandler handler = null;
     private Context context;
     private Thread.UncaughtExceptionHandler defaultHandler;
@@ -24,6 +22,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
     private LogManager logManager;
+    private LogUtils logUtils;
 
     private CrashHandler() {
         errInfo = new JSONObject();
@@ -44,12 +43,17 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      * @param restartActivity 重启到目的Activity
      */
     public void init(Context context, String url, Class restartActivity) {
-        Log.i(TAG, "init App");
-        this.context = context;
+
+        this.context = context.getApplicationContext();
         this.restartActivity = restartActivity;
         this.url = url;
+
         logManager = LogManager.newInstance(context);
         logManager.checkLog();
+
+        logUtils = LogUtils.getInstance();
+        logUtils.setIsDeBug(true);
+
         defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
@@ -78,8 +82,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
         try {
             getDeviceInfo();
-            getExceptionInfo(e);
-            logManager.saveExceptionLog(errInfo.toString());
+//            getExceptionInfo(e);
+//            logManager.saveExceptionLog(errInfo.toString());
         } catch (JSONException ex) {
             ex.printStackTrace();
             return false;
@@ -91,7 +95,6 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      * 重启App
      */
     private void restartApp() {
-        Log.i(TAG, "重启App");
         Intent intent = new Intent(context, restartActivity);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
@@ -104,7 +107,6 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      * @throws JSONException json 错误
      */
     private void getExceptionInfo(Throwable e) throws JSONException {
-        Log.i(TAG, "获取错误信息------------------------");
         StringBuilder builder = new StringBuilder("errInfo:");
         for (StackTraceElement traceElement : e.getStackTrace()) {
             builder.append("\tat ").append(traceElement).append("\n");
@@ -120,8 +122,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      * @throws JSONException Json错误
      */
     private void getDeviceInfo() throws JSONException {
-        Log.i(TAG, "获取设备信息----------------------");
-        String deviceInfo = DeviceUtils.newInstence().getDeviceInfo(context, errInfo);
+        String deviceInfo = DeviceUtils.newInstance().getDeviceInfo(context, errInfo);
         StringBuilder builder = new StringBuilder(deviceInfo);
         errInfo.put("content", builder.append("\n").toString());
     }
@@ -133,5 +134,15 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      */
     String getUrl() {
         return url;
+    }
+
+    /**
+     * 是否是调试模式，
+     * 调试模式将显示Log
+     *
+     * @param b
+     */
+    public void setIsDeBug(boolean b) {
+
     }
 }

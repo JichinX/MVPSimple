@@ -3,7 +3,6 @@ package com.example.crashhandler;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,7 +12,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -38,7 +36,8 @@ public class LogManager {
         if (null == manager) {
             manager = new LogManager();
         }
-        preferences = context.getSharedPreferences("log", Context.MODE_PRIVATE);
+        String packageName = context.getPackageName();
+        preferences = context.getSharedPreferences(packageName + "_log", Context.MODE_PRIVATE);
         BASE_PATH = context.getCacheDir().getPath();
         return manager;
     }
@@ -67,16 +66,26 @@ public class LogManager {
      */
     private String getLatestLog(File file) {
         String str = null;
+        FileInputStream fls = null;
+        ObjectInputStream ois = null;
         try {
-            FileInputStream fls = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fls);
+            fls = new FileInputStream(file);
+            ois = new ObjectInputStream(fls);
             str = (String) ois.readObject();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } finally {
+            try {
+                if (null != fls) {
+                    fls.close();
+                }
+                if (null != ois) {
+                    ois.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
         return str;
     }
 
@@ -114,8 +123,7 @@ public class LogManager {
             connection.setRequestMethod("POST");
             connection.setDoInput(true);
             connection.setDoInput(true);
-            connection.setRequestProperty("Content-Type",
-                    "application/json");
+            connection.setRequestProperty("Content-Type", "application/json");
             connection.connect();
 
             writer = new PrintWriter(connection.getOutputStream());
@@ -124,13 +132,9 @@ public class LogManager {
 
             int response = connection.getResponseCode();
             if (response == HttpURLConnection.HTTP_CREATED) {
-                Log.i(TAG, "上传日志信息至服务器------------------------success:" + str);
                 preferences.edit().putBoolean("isNew", false).apply();
             } else {
-                Log.i(TAG, "上传日志信息至服务器------------------------fail:" + response);
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -153,7 +157,6 @@ public class LogManager {
     void checkLog() {
         //1检查新文件
         if (!isHasNewLog()) {
-            Log.i(TAG, "不存在新日志------------------------");
             return;
         }
         //2,获得路径

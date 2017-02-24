@@ -1,9 +1,9 @@
 package com.example.crashhandler;
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,17 +18,18 @@ import java.lang.reflect.Method;
 
 /**
  * 获取设备信息
- * Created by Administrator on 2017/2/21.
+ * Created by XuJiChang on 2017/2/21.
  */
 
 class DeviceUtils {
     private static DeviceUtils deviceUtils = null;
+    private static TelephonyManager manager;
 
     private DeviceUtils() {
 
     }
 
-    static DeviceUtils newInstence() {
+    static DeviceUtils newInstance() {
         if (deviceUtils == null) {
             deviceUtils = new DeviceUtils();
         }
@@ -36,31 +37,77 @@ class DeviceUtils {
     }
 
 
-    //获取设备CPU信息
+    /**
+     * 获取设备信息
+     */
     String getDeviceInfo(Context context, JSONObject info) throws JSONException {
-        info.put("deviceid", getDeviceId(context));
-        TelephoneUtil u = TelephoneUtil.getInstance(context);
-        u.setCTelephoneInfo();
+
+        manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        info.put("deviceid", getDeviceId());
         StringBuilder builder = new StringBuilder("Device Info:");
         builder.append("cpu_name:").append(getCpuName())
-                .append("   device_id:").append(getDeviceId(context))
-                .append("   phone_brand:").append(getPhoneBrand())
-                .append("   phone_model:").append(getPhoneModel())
-                .append("   build_level:").append(getBuildLevel())
-                .append("   build_version:").append(getBuildVersion())
-                .append("   mac:").append(getMac())
-                .append("   serialNumber: ").append(getSerialNumber())
-                .append("   软件版本:").append(getDeviceSoftwareVersion(context))
-                .append("   设备序列号:").append(getSubscriberId(context))
-                .append("   Sim1手机号:").append(u.getINumeric1())
-                .append("   Sim2手机号:").append(u.getINumeric2())
-                .append("   Sim1 IMEI:").append(u.getImeiSIM2())
-                .append("   Sim2 IMEI:").append(u.getImeiSIM1());
-
+                .append("   设备ID:").append(getDeviceId())
+                .append("   手机品牌:").append(getPhoneBrand())
+                .append("   手机型号:").append(getPhoneModel())
+                .append("   Android API等级:").append(getBuildLevel())
+                .append("   Android 版本:").append(getBuildVersion())
+                .append("   系统版本显示：").append(getOsDisplay())
+                .append("   HardWare:").append(getHardWare())
+                .append("   Rom厂商:").append(getRom())
+                .append("   mac地址:").append(getMac())
+                .append("   设备序列号: ").append(getSerialNumber())
+                .append("   软件版本:").append(getDeviceSoftwareVersion())
+                .append("   国际移动用户识别码:").append(getSubscriberId())
+                .append("   数据运营商:").append(manager.getNetworkOperatorName())
+                .append("   移动运营商:").append(manager.getSimOperatorName())
+                .append("   SIM卡识别码:").append(manager.getSimSerialNumber())
+                .append("   SIM卡状态:").append(getSimState())
+        ;
         return builder.toString();
     }
 
-    // 获取CPU名字
+    private String getSimState() {
+        String state = "未获得状态";
+        switch (manager.getSimState()) {
+            case TelephonyManager.SIM_STATE_READY:
+                state = "正常";
+                break;
+            case TelephonyManager.SIM_STATE_NETWORK_LOCKED:
+                state = "Locked: requires a network PIN to unlock";
+                break;
+            case TelephonyManager.SIM_STATE_PIN_REQUIRED:
+                state = "Locked: requires the user's SIM PIN to unlock";
+                break;
+            case TelephonyManager.SIM_STATE_PUK_REQUIRED:
+                state = "Locked: requires the user's SIM PUK to unlock ";
+                break;
+            case TelephonyManager.SIM_STATE_UNKNOWN:
+                state = "未获得状态";
+                break;
+            case TelephonyManager.SIM_STATE_ABSENT:
+                state = "SIM卡不可用";
+                break;
+            default:
+                break;
+        }
+        return state;
+    }
+
+    private String getRom() {
+        return Build.MANUFACTURER;
+    }
+
+    private String getHardWare() {
+        return Build.HARDWARE;
+    }
+
+    private String getOsDisplay() {
+        return Build.DISPLAY;
+    }
+
+    /**
+     * 获取CPU名字
+     */
     private String getCpuName() {
         try {
             FileReader fr = new FileReader("/proc/cpuinfo");
@@ -81,12 +128,10 @@ class DeviceUtils {
     /**
      * 获取设备的唯一标识，deviceId
      *
-     * @param context
      * @return
      */
-    private String getDeviceId(Context context) {
-        TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        String deviceId = tm.getDeviceId();
+    private String getDeviceId() {
+        String deviceId = manager.getDeviceId();
         if (deviceId == null) {
             return "";
         } else {
@@ -137,21 +182,9 @@ class DeviceUtils {
     /**
      * 获取Mac地址
      *
-     * @param ctx
      * @return
      */
-    private String getMac(Context ctx) {
-
-        WifiManager wifiManager = (WifiManager) ctx
-                .getSystemService(Context.WIFI_SERVICE);
-        if (wifiManager != null) {
-            WifiInfo wi = wifiManager.getConnectionInfo();
-            return wi.getMacAddress();
-        }
-        return null;
-    }
-
-    String getMac() {
+    private String getMac() {
         String macSerial = "";
         String str = "";
         try {
@@ -172,9 +205,17 @@ class DeviceUtils {
             // 赋予默认值
             ex.printStackTrace();
         }
+        if (TextUtils.isEmpty(macSerial)) {
+            macSerial = "不可用";
+        }
         return macSerial;
     }
 
+    /**
+     * 设备序列号
+     *
+     * @return
+     */
     private String getSerialNumber() {
         String serial = null;
         try {
@@ -189,28 +230,18 @@ class DeviceUtils {
 
     /**
      * 取得IMEI SV
-     * 设备的软件版本号： 返回移动终端的软件版本，例如：GSM手机的IMEI/SV码。 例如：the IMEI/SV(software version)
-     * for GSM phones. Return null if the software version is not available.
+     * 设备的软件版本号
      */
-    public static String getDeviceSoftwareVersion(Context context) {
-        return ((TelephonyManager) context
-                .getSystemService(Context.TELEPHONY_SERVICE)).getDeviceSoftwareVersion();
+    private String getDeviceSoftwareVersion() {
+        return manager.getDeviceSoftwareVersion();
     }
 
     /**
      * 取得手机IMSI
-     * 返回用户唯一标识，比如GSM网络的IMSI编号 唯一的用户ID： 例如：IMSI(国际移动用户识别码) for a GSM phone.
-     * 需要权限：READ_PHONE_STATE
+     * 返回用户唯一标识
      */
-    public static String getSubscriberId(Context context) {
+    private String getSubscriberId() {
 
-        return ((TelephonyManager) context
-                .getSystemService(Context.TELEPHONY_SERVICE)).getSubscriberId();
-    }
-
-    public static String getSubscriberNumber(Context context) {
-
-        return ((TelephonyManager) context
-                .getSystemService(Context.TELEPHONY_SERVICE)).getSubscriberId();
+        return manager.getSubscriberId();
     }
 }
